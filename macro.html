@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Macrocenter TETT Takip</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    </head>
+    <body>
+        <div style="padding: 1rem 1.5rem; text-align: center;" class="has-background-black">
+            <h1 class="title has-text-white is-size-4">Macrocenter TETT Takip</h2>
+        </div>
+        <section class="section" style="padding: 1rem 1.5rem;">
+            <div class="container" id="app">
+                <a class="button is-success is-pulled-right" v-on:click.stop="openProductAdd">Ekle</a>
+                <table class="table is-striped is-fullwidth">
+                    <thead>
+                        <tr>
+                            <th>Barkod</th>
+                            <th>TETT</th>
+                            <th>KG</th>
+                            <th>RK</th>
+                            <th>Sil</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="product in products">
+                            <td>{{ product.barcode.toString().slice(0, 4) + "..." }}</td>
+                            <td>{{ tettToDate(product.tett.seconds) }}</td>
+                            <td>{{ calculateDaysLeft(product.tett.seconds) }}</td>
+                            <td>{{ product.rk }}</td>
+                            <td>
+                                <a class="button is-danger is-outlined is-small">
+                                    <span class="icon is-small"><i class="fas fa-trash"></i></span>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div id="addNewProductModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-card" style="padding: 1rem">
+                        <header class="modal-card-head">
+                            <p class="modal-card-title">Yeni Ürün Ekle</p>
+                            <button v-on:click="closeAddNewProductModal" class="delete" aria-label="close"></button>
+                        </header>
+                        <section class="modal-card-body">
+                            <form>
+                                <div class="field">
+                                    <label class="label">Ürün Adı</label>
+                                    <div class="control">
+                                        <input class="input" type="text">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Ürün Barkodu</label>
+                                    <div class="control">
+                                        <input class="input" type="text">
+                                    </div>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Ürün TETT</label>
+                                    <div class="control">
+                                        <input class="input" type="date" pattern="[0-9]{2}.[0-9]{2}.[0-9]{4}">
+                                    </div>
+                                </div>
+                            </form>
+                        </section>
+                        <footer class="modal-card-foot">
+                            <button class="button is-success">Ekle</button>
+                            <button class="button" v-on:click="closeAddNewProductModal">İptal</button>
+                        </footer>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-firestore.js"></script>
+        <script>
+            const config = {
+                apiKey: "AIzaSyBggElqNjUMq8PdlCwfeiymcd30ffUIVi4",
+                authDomain: "logistus-6a0ad.firebaseapp.com",
+                databaseURL: "https://logistus-6a0ad.firebaseio.com",
+                projectId: "logistus-6a0ad",
+                storageBucket: "logistus-6a0ad.appspot.com",
+                messagingSenderId: "357261525118"
+            };
+
+            firebase.initializeApp(config);
+
+            // Initialize Cloud Firestore through Firebase
+            let db = firebase.firestore();
+
+            // Disable deprecated features
+            db.settings({
+                timestampsInSnapshots: true
+            });
+
+            let app = new Vue({
+                el: '#app',
+                data() {
+                    return {
+                        products: []
+                    }
+                },
+                mounted() {
+                    db.collection("products").get().then((querySnapshot) => {
+                        querySnapshot.forEach((doc) => {
+                            this.products.push(doc.data())
+                        })
+                    });
+                },
+                methods: {
+                    tettToDate(epoch) {
+                        return new Date(epoch * 1000).getDate() + "." + (new Date(epoch * 1000).getMonth() + 1) + "." + new Date(epoch * 1000).getFullYear()
+                    },
+                    calculateDaysLeft(epoch) {
+                        return Math.round(((epoch) - (new Date().getTime()/1000)) / 60 / 60 / 24)
+                    },
+                    openProductAdd() {
+                        document.getElementById("addNewProductModal").classList.add("is-active")
+                    },
+                    closeAddNewProductModal() {
+                        document.getElementById("addNewProductModal").classList.remove("is-active")
+                    }
+                }
+            })
+        </script>
+    </body>
+</html>
