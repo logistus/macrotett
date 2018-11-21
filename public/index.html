@@ -15,11 +15,11 @@
   </div>
   <section class="section" style="padding: 1rem 1.5rem;">
     <div class="container" id="app">
-      <a class="button is-success is-pulled-right" v-on:click.stop="openProductAdd">Ekle</a>
+      <a class="button is-success is-pulled-right" @click="openProductAdd">Ekle</a>
       <table class="table is-striped is-fullwidth">
         <thead>
           <tr>
-            <th>Barkod</th>
+            <th>Mal No</th>
             <th>TETT</th>
             <th>KG</th>
             <th>RK</th>
@@ -27,15 +27,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="product in products">
-            <td>{{ product.barcode }}</td>
-            <td>{{ tettToDate(product.tett.seconds) }}</td>
-            <td>{{ calculateDaysLeft(product.tett.seconds) }}</td>
+          <tr v-for="product, index in products" :key="product.id">
+            <td>{{ product.productNumber }}</td>
+            <td>{{ tettToDate(product.tett) }}</td>
+            <td>{{ calculateDaysLeft(product.tett) }}</td>
             <td>{{ product.rk }}</td>
             <td>
-              <a class="button is-danger is-outlined is-small">
-                                    <span class="icon is-small"><i class="fas fa-trash"></i></span>
-                                </a>
+              <a class="button is-danger is-outlined is-small" @click="deleteProduct(index, product.id)">
+                <span class="icon is-small"><i class="fas fa-trash"></i></span>
+              </a>
             </td>
           </tr>
         </tbody>
@@ -45,39 +45,33 @@
         <div class="modal-card" style="padding: 1rem">
           <header class="modal-card-head">
             <p class="modal-card-title">Yeni Ürün Ekle</p>
-            <button v-on:click="closeAddNewProductModal" class="delete" aria-label="close"></button>
+            <button @click="closeAddNewProductModal" class="delete" aria-label="close"></button>
           </header>
           <section class="modal-card-body">
             <form>
               <div class="field">
-                <label class="label">Ürün Adı</label>
+                <label class="label">Mal No</label>
                 <div class="control">
-                  <input class="input" type="text">
-                </div>
-              </div>
-              <div class="field">
-                <label class="label">Ürün Barkodu</label>
-                <div class="control">
-                  <input class="input" type="text">
+                  <input class="input" v-model="productNumber" type="text">
                 </div>
               </div>
               <div class="field">
                 <label class="label">Ürün TETT</label>
                 <div class="control">
-                  <input class="input" type="date" pattern="[0-9]{2}.[0-9]{2}.[0-9]{4}">
+                  <input class="input" v-model="tett" type="date">
                 </div>
               </div>
               <div class="field">
-                <label class="label">Ürün Resim</label>
+                <label class="label">Reyondan Kaldır</label>
                 <div class="control">
-                  <input class="input" type="file">
+                  <input class="input" type="number" v-model="rk" min="0">
                 </div>
               </div>
             </form>
           </section>
           <footer class="modal-card-foot">
-            <button class="button is-success">Ekle</button>
-            <button class="button" v-on:click="closeAddNewProductModal">İptal</button>
+            <button class="button is-success" @click="addNewProduct">Ekle</button>
+            <button class="button" @click="closeAddNewProductModal">İptal</button>
           </footer>
         </div>
       </div>
@@ -87,6 +81,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-firestore.js"></script>
+  <script src="https://unpkg.com/vue-firestore"></script>
   <script>
     const config = {
       apiKey: "AIzaSyBggElqNjUMq8PdlCwfeiymcd30ffUIVi4",
@@ -103,16 +98,20 @@
     db.settings({
       timestampsInSnapshots: true
     });
+    
     let app = new Vue({
       el: '#app',
-      data() {
-        return {
-          products: []
-        }
+      data: {
+          products: [],
+          newProduct: {},
+          tett: '',
+          rk: '',
+          productNumber: '',
+          id: ''
       },
       mounted() {
-        db.collection("products").get().then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {
+        db.collection("products").orderBy("tett", "asc").get().then((querySnapshot) => {
+          querySnapshot.forEach((doc) => {       
             this.products.push(doc.data())
           })
         });
@@ -129,6 +128,37 @@
         },
         closeAddNewProductModal() {
           document.getElementById("addNewProductModal").classList.remove("is-active")
+        },
+        addNewProduct: function() {
+          db.collection("products").add({
+            productNumber: this.productNumber,
+            tett: new Date(this.tett).getTime() / 1000,
+            rk: this.rk
+          })
+          .then((docRef) => {
+            // close modal
+            document.getElementById("addNewProductModal").classList.remove("is-active")
+            // add id field
+            docRef.update({ id: docRef.id })
+            // add new product to products array at Vue
+            this.newProduct.id = docRef.id
+            this.newProduct.productNumber = this.productNumber
+            this.newProduct.tett = new Date(this.tett).getTime() / 1000
+            this.newProduct.rk = this.rk
+            this.products.push(this.newProduct)
+            // clear data
+            this.newProduct = {}
+            this.productNumber = ""
+            this.rk = ""
+            this.tett = ""
+          })
+          .catch(function(error) {
+              alert("Error: " + error)
+          });
+        },
+        deleteProduct(index, id) {
+          this.products.splice(index, 1)
+          db.collection("products").doc(id).delete()
         }
       }
     })
