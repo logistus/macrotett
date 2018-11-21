@@ -16,7 +16,7 @@
   <section class="section" style="padding: 1rem 1.5rem;">
     <div class="container" id="app">
       <a class="button is-success is-pulled-right" @click="openProductAdd">Ekle</a>
-      <table class="table is-striped is-fullwidth">
+      <table class="table is-striped is-fullwidth" v-if="products.length>0">
         <thead>
           <tr>
             <th>Mal No</th>
