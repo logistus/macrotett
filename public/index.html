@@ -15,7 +15,11 @@
   </div>
   <section class="section" style="padding: 1rem 1.5rem;">
     <div class="container" id="app">
-      <a class="button is-success is-pulled-right" @click="openProductAdd">Ekle</a>
+      <div style="text-align: right;">
+        <a class="button is-primary" v-show="user" @click="openProductAdd">Ekle</a>
+        <a class="button is-success" v-show="!user" @click="openLoginModal">Giriş Yap</a>
+        <a class="button is-danger" v-show="user" @click="logout">Çıkış Yap</a>
+      </div>
       <table class="table is-striped is-fullwidth" v-if="products.length>0">
         <thead>
           <tr>
@@ -70,18 +74,48 @@
             </form>
           </section>
           <footer class="modal-card-foot">
-            <button class="button is-success" @click="addNewProduct">Ekle</button>
+            <button class="button is-primary" @click="addNewProduct">Ekle</button>
             <button class="button" @click="closeAddNewProductModal">İptal</button>
+          </footer>
+        </div>
+      </div>
+
+      <div id="loginModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card" style="padding: 1rem">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Giriş Yap</p>
+            <button @click="closeLoginModal" class="delete" aria-label="close"></button>
+          </header>
+          <section class="modal-card-body">
+            <form>
+              <div class="field">
+                <label class="label">E-Posta</label>
+                <div class="control">
+                  <input class="input" v-model="email" type="email" required>
+                </div>
+              </div>
+              <div class="field">
+                <label class="label">Parola</label>
+                <div class="control">
+                  <input class="input" v-model="password" type="password" required>
+                </div>
+              </div>
+            </form>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-primary" @click="login">Giriş Yap</button>
+            <button class="button" @click="closeLoginModal">İptal</button>
           </footer>
         </div>
       </div>
     </div>
   </section>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.18.0/axios.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/5.5.8/firebase-firestore.js"></script>
-  <script src="https://unpkg.com/vue-firestore"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-auth.js"></script>
+
   <script>
     const config = {
       apiKey: "AIzaSyBggElqNjUMq8PdlCwfeiymcd30ffUIVi4",
@@ -98,23 +132,27 @@
     db.settings({
       timestampsInSnapshots: true
     });
-    
+
     let app = new Vue({
       el: '#app',
       data: {
-          products: [],
-          newProduct: {},
-          tett: '',
-          rk: '',
-          productNumber: '',
-          id: ''
+        products: [],
+        newProduct: {},
+        tett: '',
+        rk: '',
+        productNumber: '',
+        id: '',
+        user: null,
+        email: '',
+        password: ''
       },
       mounted() {
         db.collection("products").orderBy("tett", "asc").get().then((querySnapshot) => {
-          querySnapshot.forEach((doc) => {       
+          querySnapshot.forEach((doc) => {
             this.products.push(doc.data())
           })
         });
+        firebase.auth().onAuthStateChanged(user => this.user = user)
       },
       methods: {
         tettToDate(epoch) {
@@ -126,39 +164,63 @@
         openProductAdd() {
           document.getElementById("addNewProductModal").classList.add("is-active")
         },
+        openLoginModal() {
+          document.getElementById("loginModal").classList.add("is-active")
+        },
+        closeLoginModal() {
+          document.getElementById("loginModal").classList.remove("is-active")
+        },
         closeAddNewProductModal() {
           document.getElementById("addNewProductModal").classList.remove("is-active")
         },
-        addNewProduct: function() {
+        addNewProduct: function () {
           db.collection("products").add({
             productNumber: this.productNumber,
             tett: new Date(this.tett).getTime() / 1000,
             rk: this.rk
           })
-          .then((docRef) => {
-            // close modal
-            document.getElementById("addNewProductModal").classList.remove("is-active")
-            // add id field
-            docRef.update({ id: docRef.id })
-            // add new product to products array at Vue
-            this.newProduct.id = docRef.id
-            this.newProduct.productNumber = this.productNumber
-            this.newProduct.tett = new Date(this.tett).getTime() / 1000
-            this.newProduct.rk = this.rk
-            this.products.push(this.newProduct)
-            // clear data
-            this.newProduct = {}
-            this.productNumber = ""
-            this.rk = ""
-            this.tett = ""
-          })
-          .catch(function(error) {
+            .then((docRef) => {
+              // close modal
+              document.getElementById("addNewProductModal").classList.remove("is-active")
+              // add id field
+              docRef.update({ id: docRef.id })
+              // add new product to products array at Vue
+              this.newProduct.id = docRef.id
+              this.newProduct.productNumber = this.productNumber
+              this.newProduct.tett = new Date(this.tett).getTime() / 1000
+              this.newProduct.rk = this.rk
+              this.products.push(this.newProduct)
+              // clear data
+              this.newProduct = {}
+              this.productNumber = ""
+              this.rk = ""
+              this.tett = ""
+            })
+            .catch(function (error) {
               alert("Error: " + error)
-          });
+            });
         },
         deleteProduct(index, id) {
-          this.products.splice(index, 1)
           db.collection("products").doc(id).delete()
+            .then(() => {
+              this.products.splice(index, 1)
+            }).catch(error => {
+              alert(error)
+            })
+        },
+        login() {
+          firebase.auth().signInWithEmailAndPassword(this.email, this.password).catch((error) => {
+            var errorCode = error.code;
+            var errorMessage = error.message;
+            alert(errorMessage)
+          });
+          this.user = firebase.auth().currentUser
+          document.getElementById("loginModal").classList.remove("is-active")
+        },
+        logout() {
+          firebase.auth().signOut().then(() => {
+            this.user = null
+          })
         }
       }
     })
