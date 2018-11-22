@@ -16,9 +16,9 @@
   <section class="section" style="padding: 1rem 1.5rem;">
     <div class="container" id="app">
       <div style="text-align: right;">
-        <a class="button is-primary" v-show="user" @click="openProductAdd">Ekle</a>
-        <a class="button is-success" v-show="!user" @click="openLoginModal">Giriş Yap</a>
-        <a class="button is-danger" v-show="user" @click="logout">Çıkış Yap</a>
+        <a class="button is-primary" v-if="user" @click="openProductAdd">Ekle</a>
+        <a class="button is-success" v-if="!user" @click="openLoginModal">Giriş Yap</a>
+        <a class="button is-danger" v-if="user" @click="logout">Çıkış Yap</a>
       </div>
       <table class="table is-striped is-fullwidth" v-if="products.length>0">
         <thead>
