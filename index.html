@@ -10,24 +10,27 @@
 </head>
 
 <body>
+  <div class="lds-circle" v-show="!loading">
+    <div></div>
+  </div>
   <div style="padding: 1rem 1.5rem; text-align: center;" class="has-background-black">
     <h1 class="title has-text-white is-size-4">Macrocenter TETT Takip</h2>
   </div>
   <section class="section" style="padding: 1rem 1.5rem;">
     <div class="container" id="app">
-      <div style="text-align: right;">
-        <a class="button is-primary" v-if="user" @click="openProductAdd">Ekle</a>
-        <a class="button is-success" v-if="!user" @click="openLoginModal">Giriş Yap</a>
-        <a class="button is-danger" v-if="user" @click="logout">Çıkış Yap</a>
+      <div style="text-align: right;" style="display: none;" v-show="!loading">
+        <a class="button is-primary" style="display: none;" v-show="user" @click="openProductAdd">Ekle</a>
+        <a class="button is-danger" style="display: none;" v-show="user" @click="logout">Çıkış Yap</a>
+        <a class="button is-success" style="display: none;" v-show="!user" @click="openLoginModal">Giriş Yap</a>
       </div>
-      <table class="table is-striped is-fullwidth" v-if="products.length>0">
+      <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length>0">
         <thead>
           <tr>
             <th>Mal No</th>
             <th>TETT</th>
             <th>KG</th>
             <th>RK</th>
-            <th v-show="user">Sil</th>
+            <th v-show="user" style="display: none;">Sil</th>
           </tr>
         </thead>
         <tbody>
@@ -36,7 +39,7 @@
             <td>{{ tettToDate(product.tett) }}</td>
             <td>{{ calculateDaysLeft(product.tett) }}</td>
             <td>{{ product.rk }}</td>
-            <td v-show="user">
+            <td v-show="user" style="display: none;">
               <a class="button is-danger is-outlined is-small" @click="deleteProduct(index, product.id)">
                 <span class="icon is-small"><i class="fas fa-trash"></i></span>
               </a>
@@ -144,7 +147,8 @@
         id: '',
         user: null,
         email: '',
-        password: ''
+        password: '',
+        loading: true
       },
       mounted() {
         db.collection("products").orderBy("tett", "asc").get().then((querySnapshot) => {
@@ -152,7 +156,10 @@
             this.products.push(doc.data())
           })
         });
-        firebase.auth().onAuthStateChanged(user => this.user = user)
+        firebase.auth().onAuthStateChanged((user) => {
+          this.user = user
+          this.loading = false
+        })
       },
       methods: {
         tettToDate(epoch) {
