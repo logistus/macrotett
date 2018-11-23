@@ -191,7 +191,7 @@
               alert("Error: " + error)
             });
         },
-        deleteProduct(index, id) {
+        deleteProduct(id) {
           db.collection("products").doc(id).delete()
             .then(() => {
               document.location.reload()
