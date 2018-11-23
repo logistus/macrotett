@@ -25,8 +25,8 @@
           <tr>
             <th>MN</th>
             <th>TETT</th>
-            <th>KG</th>
             <th>RK</th>
+            <th>KG</th>
             <th v-show="user" style="display: none;">Sil</th>
           </tr>
         </thead>
@@ -34,8 +34,8 @@
           <tr v-for="product, index in products" :key="product.id">
             <td>{{ product.productNumber }}</td>
             <td>{{ tettToDate(product.tett) }}</td>
-            <td>{{ calculateDaysLeft(product.tett) }}</td>
             <td>{{ product.rk }}</td>
+            <td>{{ calculateDaysLeft(product.tett) }}</td>
             <td v-show="user" style="display: none;">
               <a class="button is-danger is-outlined is-small" @click="deleteProduct(product.id)">
                 <span class="icon is-small"><i class="fas fa-trash"></i></span>
