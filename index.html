@@ -23,7 +23,7 @@
       <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length>0">
         <thead>
           <tr>
-            <th>Mal No</th>
+            <th>MN</th>
             <th>TETT</th>
             <th>KG</th>
             <th>RK</th>
@@ -37,7 +37,7 @@
             <td>{{ calculateDaysLeft(product.tett) }}</td>
             <td>{{ product.rk }}</td>
             <td v-show="user" style="display: none;">
-              <a class="button is-danger is-outlined is-small" @click="deleteProduct(index, product.id)">
+              <a class="button is-danger is-outlined is-small" @click="deleteProduct(product.id)">
                 <span class="icon is-small"><i class="fas fa-trash"></i></span>
               </a>
             </td>
@@ -56,7 +56,7 @@
               <div class="field">
                 <label class="label">Mal No</label>
                 <div class="control">
-                  <input class="input" v-model="productNumber" type="text">
+                  <input class="input" v-model="productNumber" type="number">
                 </div>
               </div>
               <div class="field">
@@ -111,7 +111,7 @@
       </div>
     </div>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-auth.js"></script>
@@ -137,7 +137,6 @@
       el: '#app',
       data: {
         products: [],
-        newProduct: {},
         tett: '',
         rk: '',
         productNumber: '',
@@ -184,21 +183,9 @@
             rk: this.rk
           })
             .then((docRef) => {
-              // close modal
-              document.getElementById("addNewProductModal").classList.remove("is-active")
               // add id field
               docRef.update({ id: docRef.id })
-              // add new product to products array at Vue
-              this.newProduct.id = docRef.id
-              this.newProduct.productNumber = this.productNumber
-              this.newProduct.tett = new Date(this.tett).getTime() / 1000
-              this.newProduct.rk = this.rk
-              this.products.push(this.newProduct)
-              // clear data
-              this.newProduct = {}
-              this.productNumber = ""
-              this.rk = ""
-              this.tett = ""
+              document.location.reload()
             })
             .catch(function (error) {
               alert("Error: " + error)
@@ -207,7 +194,7 @@
         deleteProduct(index, id) {
           db.collection("products").doc(id).delete()
             .then(() => {
-              this.products.splice(index, 1)
+              document.location.reload()
             }).catch(error => {
               alert(error)
             })
