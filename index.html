@@ -53,34 +53,37 @@
         <a class="button is-primary" style="display: none;" v-show="user" @click="openProductAdd">Ekle</a>
         <a class="button is-danger" style="display: none;" v-show="user" @click="logout">Çıkış Yap</a>
         <a class="button is-success" style="display: none;" v-show="!user" @click="openLoginModal">Giriş Yap</a>
+        <a class="button is-info" style="display: none;" v-show="!user" @click="openRegisterModal">Kayıt Ol</a>
       </div>
       <div style="display: none;" class="lds-hourglass" v-show="loading"></div>
-      <div style="display: none;" v-show="!loading" class="notification">Toplam {{ allRecords }} kayıt, gösterilen {{
-        showingRecords }}</div>
-      <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length>0">
-        <thead>
-          <tr>
-            <th>MN</th>
-            <th>TETT</th>
-            <th>RK</th>
-            <th>KG</th>
-            <th v-show="user" style="display: none;">Sil</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="product, index in products" :key="product.id">
-            <td>{{ product.productNumber }}</td>
-            <td>{{ tettToDate(product.tett) }}</td>
-            <td>{{ product.rk }}</td>
-            <td>{{ calculateDaysLeft(product.tett) }}</td>
-            <td v-show="user" style="display: none;">
-              <a class="button is-danger is-outlined is-small" @click="deleteProduct(product.id)">
-                <span class="icon is-small"><i class="fas fa-trash"></i></span>
-              </a>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="display: none;" v-show="!loading && user">
+        <div class="notification" style="text-align: center;" style="display: none;" v-show="products.length > 0">Gösterilen kayıt: {{ showingRecords }}</div>
+        <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length > 0">
+          <thead>
+            <tr>
+              <th>MN</th>
+              <th>TETT</th>
+              <th>RK</th>
+              <th>KG</th>
+              <th>Sil</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="product, index in products" :key="product.id">
+              <td>{{ product.productNumber }}</td>
+              <td>{{ tettToDate(product.tett) }}</td>
+              <td>{{ product.rk }}</td>
+              <td>{{ calculateDaysLeft(product.tett) }}</td>
+              <td>
+                <a class="button is-danger is-outlined is-small" @click="deleteProduct(product.id)">
+                  <span class="icon is-small"><i class="fas fa-trash"></i></span>
+                </a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
       <div id="addNewProductModal" class="modal">
         <div class="modal-background"></div>
         <div class="modal-card" style="padding: 1rem">
@@ -150,13 +153,13 @@
               <div class="field">
                 <label class="label">E-Posta</label>
                 <div class="control">
-                  <input class="input" v-model="email" type="email" required>
+                  <input class="input" v-model="login_email" type="email">
                 </div>
               </div>
               <div class="field">
                 <label class="label">Parola</label>
                 <div class="control">
-                  <input class="input" v-model="password" type="password" required>
+                  <input class="input" v-model="login_password" type="password">
                 </div>
               </div>
             </form>
@@ -167,6 +170,36 @@
           </footer>
         </div>
       </div>
+
+      <div id="registerModal" class="modal">
+          <div class="modal-background"></div>
+          <div class="modal-card" style="padding: 1rem">
+            <header class="modal-card-head">
+              <p class="modal-card-title">Kayıt Ol</p>
+              <button @click="closeRegisterModal" class="delete" aria-label="close"></button>
+            </header>
+            <section class="modal-card-body">
+              <form>
+                <div class="field">
+                  <label class="label">E-Posta</label>
+                  <div class="control">
+                    <input class="input" v-model="register_email" type="email" required>
+                  </div>
+                </div>
+                <div class="field">
+                  <label class="label">Parola</label>
+                  <div class="control">
+                    <input class="input" v-model="register_password" type="password" required>
+                  </div>
+                </div>
+              </form>
+            </section>
+            <footer class="modal-card-foot">
+              <button class="button is-primary" @click="register">Kayıt Ol</button>
+              <button class="button" @click="closeRegisterModal">İptal</button>
+            </footer>
+          </div>
+        </div>
     </div>
   </section>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
@@ -201,26 +234,29 @@
         productNumber: '',
         id: '',
         user: null,
-        email: '',
-        password: '',
+        login_email: '',
+        login_password: '',
+        register_email: '',
+        register_password: '',
         loading: true,
-        allRecords: 0,
         showingRecords: 0,
       },
       mounted() {
         let twoMonthsLater = (new Date().getTime() / 1000) + 60 * 24 * 60 * 60;
-        db.collection("products").where("tett", "<=", twoMonthsLater).orderBy("tett", "asc").get().then((querySnapshot) => {
-          this.showingRecords = querySnapshot.size
-          querySnapshot.forEach((doc) => {
-            this.products.push(doc.data())
-          })
-          this.loading = false
-        })
-        db.collection("products").get().then((allDocs) => {
-          this.allRecords = allDocs.size
-        })
+        
         firebase.auth().onAuthStateChanged((user) => {
-          this.user = user
+          if (user) {
+            this.user = user
+            db.collection("products").where("tett", "<=", twoMonthsLater).where("uid", "==", user.uid).orderBy("tett", "asc").get().then((querySnapshot) => {
+              this.showingRecords = querySnapshot.size
+              querySnapshot.forEach((doc) => {
+                this.products.push(doc.data())
+              })
+              this.loading = false
+            })
+          } else {
+            this.loading = false
+          }
         })
       },
       methods: {
@@ -236,8 +272,14 @@
         openLoginModal() {
           document.getElementById("loginModal").classList.add("is-active")
         },
+        openRegisterModal() {
+          document.getElementById("registerModal").classList.add("is-active")
+        },
         closeLoginModal() {
           document.getElementById("loginModal").classList.remove("is-active")
+        },
+        closeRegisterModal() {
+          document.getElementById("registerModal").classList.remove("is-active")
         },
         closeAddNewProductModal() {
           document.getElementById("addNewProductModal").classList.remove("is-active")
@@ -250,7 +292,7 @@
           })
             .then((docRef) => {
               // add id field
-              docRef.update({ id: docRef.id })
+              docRef.update({ id: docRef.id, uid: this.user.uid })
               document.location.reload()
             })
             .catch(function (error) {
@@ -258,21 +300,31 @@
             });
         },
         deleteProduct(id) {
-          db.collection("products").doc(id).delete()
-            .then(() => {
-              document.location.reload()
-            }).catch(error => {
-              alert(error)
-            })
+          let isOk = confirm("Emin misin?")
+          if (isOk) {
+            db.collection("products").doc(id).delete()
+              .then(() => {
+                document.location.reload()
+              }).catch(error => {
+                alert(error)
+              })
+          }
         },
         login() {
-          firebase.auth().signInWithEmailAndPassword(this.email, this.password).catch((error) => {
-            var errorCode = error.code;
+          firebase.auth().signInWithEmailAndPassword(this.login_email, this.login_password).catch((error) => {
             var errorMessage = error.message;
             alert(errorMessage)
-          });
+          })
           this.user = firebase.auth().currentUser
           document.getElementById("loginModal").classList.remove("is-active")
+        },
+        register() {
+          firebase.auth().createUserWithEmailAndPassword(this.register_email, this.register_password).catch((error) => {
+            var errorMessage = error.message;
+            alert(errorMessage)
+          })
+          this.user = firebase.auth().currentUser
+          document.getElementById("registerModal").classList.remove("is-active")
         },
         logout() {
           firebase.auth().signOut().then(() => {
