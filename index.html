@@ -7,6 +7,40 @@
   <title>Macrocenter TETT Takip</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
   <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  <style>
+    .lds-hourglass {
+      display: block;
+      position: relative;
+      width: 64px;
+      height: 64px;
+      margin: auto;
+    }
+    .lds-hourglass:after {
+      content: " ";
+      display: block;
+      border-radius: 50%;
+      width: 0;
+      height: 0;
+      margin: 6px;
+      box-sizing: border-box;
+      border: 26px solid #cef;
+      border-color: #cef transparent #cef transparent;
+      animation: lds-hourglass 1.2s infinite;
+    }
+    @keyframes lds-hourglass {
+      0% {
+        transform: rotate(0);
+        animation-timing-function: cubic-bezier(0.55, 0.055, 0.675, 0.19);
+      }
+      50% {
+        transform: rotate(900deg);
+        animation-timing-function: cubic-bezier(0.215, 0.61, 0.355, 1);
+      }
+      100% {
+        transform: rotate(1800deg);
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -20,6 +54,9 @@
         <a class="button is-danger" style="display: none;" v-show="user" @click="logout">Çıkış Yap</a>
         <a class="button is-success" style="display: none;" v-show="!user" @click="openLoginModal">Giriş Yap</a>
       </div>
+      <div style="display: none;" class="lds-hourglass" v-show="loading"></div>
+      <div style="display: none;" v-show="!loading" class="notification">Toplam {{ allRecords }} kayıt, gösterilen {{
+        showingRecords }}</div>
       <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length>0">
         <thead>
           <tr>
@@ -56,13 +93,34 @@
               <div class="field">
                 <label class="label">Mal No</label>
                 <div class="control">
-                  <input class="input" v-model="productNumber" type="number">
+                  <input class="input" v-model="productNumber" type="text" maxlength="8">
                 </div>
               </div>
               <div class="field">
                 <label class="label">Ürün TETT</label>
-                <div class="control">
-                  <input class="input" v-model="tett" type="date">
+                <div class="control" style="display: flex; flex-direction: row; justify-content: space-between;">
+                  <div class="select">
+                    <select v-model="tett_day">
+                      <option>Gün</option>
+                      <option v-for="d in 31">{{ d }}</option>
+                    </select>
+                  </div>
+                  <div class="select">
+                    <select v-model="tett_month">
+                      <option>Ay</option>
+                      <option v-for="m in 12">{{ m }}</option>
+                    </select>
+                  </div>
+                  <div class="select">
+                    <select v-model="tett_year">
+                      <option>Yıl</option>
+                      <option>2018</option>
+                      <option>2019</option>
+                      <option>2020</option>
+                      <option>2021</option>
+                      <option>2022</option>
+                    </select>
+                  </div>
                 </div>
               </div>
               <div class="field">
@@ -115,7 +173,6 @@
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-auth.js"></script>
-
   <script>
     const config = {
       apiKey: "AIzaSyBggElqNjUMq8PdlCwfeiymcd30ffUIVi4",
@@ -137,24 +194,33 @@
       el: '#app',
       data: {
         products: [],
-        tett: '',
+        tett_day: '',
+        tett_month: '',
+        tett_year: '',
         rk: '',
         productNumber: '',
         id: '',
         user: null,
         email: '',
         password: '',
-        loading: true
+        loading: true,
+        allRecords: 0,
+        showingRecords: 0,
       },
       mounted() {
-        db.collection("products").orderBy("tett", "asc").get().then((querySnapshot) => {
+        let twoMonthsLater = (new Date().getTime() / 1000) + 60 * 24 * 60 * 60;
+        db.collection("products").where("tett", "<=", twoMonthsLater).orderBy("tett", "asc").get().then((querySnapshot) => {
+          this.showingRecords = querySnapshot.size
           querySnapshot.forEach((doc) => {
             this.products.push(doc.data())
           })
-        });
+          this.loading = false
+        })
+        db.collection("products").get().then((allDocs) => {
+          this.allRecords = allDocs.size
+        })
         firebase.auth().onAuthStateChanged((user) => {
           this.user = user
-          this.loading = false
         })
       },
       methods: {
@@ -179,7 +245,7 @@
         addNewProduct: function () {
           db.collection("products").add({
             productNumber: this.productNumber,
-            tett: new Date(this.tett).getTime() / 1000,
+            tett: new Date(this.tett_year + "-" + (this.tett_month) + "-" + this.tett_day).getTime() / 1000,
             rk: this.rk
           })
             .then((docRef) => {
