@@ -49,7 +49,8 @@
   </div>
   <section class="section" style="padding: 0;">
     <div class="container" id="app">
-      <div style="text-align: right; padding: 1rem" style="display: none;" v-show="!loading">
+      <div style="display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 1rem" v-show="!loading">
+        <span class="float: left;" style="display: none;" v-show="user">{{ user ? user.email : '' }}</span>
         <a class="button is-primary" style="display: none;" v-show="user" @click="openProductAdd">Ekle</a>
         <a class="button is-danger" style="display: none;" v-show="user" @click="logout">Çıkış Yap</a>
         <a class="button is-success" style="display: none;" v-show="!user" @click="openLoginModal">Giriş Yap</a>
