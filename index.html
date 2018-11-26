@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Macrocenter TETT Takip</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.2/css/bulma.min.css">
-  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
   <style>
     .lds-hourglass {
       display: block;
@@ -124,29 +124,8 @@
               </div>
               <div class="field">
                 <label class="label">Ürün TETT</label>
-                <div class="control" style="display: flex; flex-direction: row; justify-content: space-between;">
-                  <div class="select">
-                    <select v-model="tett_day">
-                      <option>Gün</option>
-                      <option v-for="d in 31">{{ d }}</option>
-                    </select>
-                  </div>
-                  <div class="select">
-                    <select v-model="tett_month">
-                      <option selected>Ay</option>
-                      <option v-for="m in 12">{{ m }}</option>
-                    </select>
-                  </div>
-                  <div class="select">
-                    <select v-model="tett_year">
-                      <option>Yıl</option>
-                      <option>2018</option>
-                      <option>2019</option>
-                      <option>2020</option>
-                      <option>2021</option>
-                      <option>2022</option>
-                    </select>
-                  </div>
+                <div class="control">
+                    <input type="text" class="input" id="tett">
                 </div>
               </div>
               <div class="field">
@@ -225,11 +204,21 @@
       </div>
     </div>
   </section>
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-auth.js"></script>
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <script>
+    $(function() {
+      $( "#tett" ).datepicker({
+        changeMonth: true,
+        changeYear: true,
+        dateFormat: "dd M yy"
+      });
+    })
     const config = {
       apiKey: "AIzaSyBggElqNjUMq8PdlCwfeiymcd30ffUIVi4",
       authDomain: "logistus-6a0ad.firebaseapp.com",
@@ -250,9 +239,6 @@
       el: '#app',
       data: {
         products: [],
-        tett_day: '',
-        tett_month: '',
-        tett_year: '',
         rk: '',
         productNumber: '',
         id: '',
@@ -286,6 +272,9 @@
         })
       },
       methods: {
+        changeTett() {
+          this.tett = document.getElementById("tett").value
+        },
         tettToDate(epoch) {
           return new Date(epoch * 1000).getDate() + "." + (new Date(epoch * 1000).getMonth() + 1) + "." + new Date(epoch * 1000).getFullYear()
         },
@@ -343,7 +332,7 @@
           this.products = []
           if (this.searchText) {
             db.collection("products")
-              .where("tett", "<=", twoMonthsLater)
+              .where("tett", "<=", filterTime)
               .where("uid", "==", this.user.uid)
               .where("productNumber", "==", this.searchText)
               .orderBy("tett", "asc").get().then((querySnapshot) => {
@@ -355,7 +344,7 @@
               })
           } else {
             db.collection("products")
-              .where("tett", "<=", twoMonthsLater)
+              .where("tett", "<=", filterTime)
               .where("uid", "==", this.user.uid)
               .orderBy("tett", "asc").get().then((querySnapshot) => {
                 this.showingRecords = querySnapshot.size
@@ -369,7 +358,7 @@
         addNewProduct: function () {
           db.collection("products").add({
             productNumber: this.productNumber,
-            tett: new Date(this.tett_year + "-" + (this.tett_month) + "-" + this.tett_day).getTime() / 1000,
+            tett: new Date(document.getElementById("tett").value).getTime() / 1000,
             rk: this.rk
           })
             .then((docRef) => {
