@@ -59,24 +59,20 @@
       </div>
       <div style="display: none;" class="lds-hourglass" v-show="loading"></div>
       <div style="display: none;" v-show="!loading && user">
-        <div style="display: flex; justify-content: space-between">
-          <div class="field is-horizontal">
-            <p class="control has-icons-left">
-              <input class="input" type="text" v-model="searchText" placeholder="Mal No">
-              <span class="icon is-small is-left">
-                <i class="fas fa-search"></i>
-              </span>
-            </p>
-            <a class="button is-info" style="display: none;" v-show="user" @click="search">Ara</a>
-          </div>
-          <div>
-            <div class="select">
-              <select v-model="filterDays" id="filterDays" @change="filterResults">
-                <option value="30">1 Ay</option>
-                <option value="60">2 Ay</option>
-                <option value="0">Tümü</option>
-              </select>
-            </div>
+        <div style="display: flex; justify-content: space-between; margin: 0.5rem;">
+          <p class="control has-icons-left" style="margin-left: 0.5rem;">
+            <input class="input" type="text" v-model="searchText" placeholder="Mal No">
+            <span class="icon is-small is-left">
+              <i class="fas fa-search"></i>
+            </span>
+          </p>
+          <a class="button is-info" style="display: none; margin: 0 0.5rem;" v-show="user" @click="search">Ara</a>
+          <div class="select" style="margin-right: 0.5rem;">
+            <select v-model="filterDays" id="filterDays" @change="filterResults">
+              <option value="30">1 Ay</option>
+              <option value="60">2 Ay</option>
+              <option value="0">Tümü</option>
+            </select>
           </div>
         </div>
         <div class="notification" style="text-align: center;" style="display: none;" v-show="products.length > 0">Gösterilen
@@ -125,7 +121,7 @@
               <div class="field">
                 <label class="label">Ürün TETT</label>
                 <div class="control">
-                    <input type="text" class="input" id="tett">
+                  <input type="text" class="input" id="tett">
                 </div>
               </div>
               <div class="field">
@@ -212,8 +208,8 @@
   <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
   <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   <script>
-    $(function() {
-      $( "#tett" ).datepicker({
+    $(function () {
+      $("#tett").datepicker({
         changeMonth: true,
         changeYear: true,
         dateFormat: "dd M yy"
