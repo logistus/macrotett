@@ -49,7 +49,8 @@
   </div>
   <section class="section" style="padding: 0;">
     <div class="container" id="app">
-      <div style="display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 1rem" v-show="!loading">
+      <div style="display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 1rem"
+        v-show="!loading">
         <span class="float: left;" style="display: none;" v-show="user">{{ user ? user.email : '' }}</span>
         <a class="button is-primary" style="display: none;" v-show="user" @click="openProductAdd">Ekle</a>
         <a class="button is-danger" style="display: none;" v-show="user" @click="logout">Çıkış Yap</a>
@@ -58,7 +59,28 @@
       </div>
       <div style="display: none;" class="lds-hourglass" v-show="loading"></div>
       <div style="display: none;" v-show="!loading && user">
-        <div class="notification" style="text-align: center;" style="display: none;" v-show="products.length > 0">Gösterilen kayıt: {{ showingRecords }}</div>
+        <div style="display: flex; justify-content: space-between">
+          <div class="field is-horizontal">
+            <p class="control has-icons-left">
+              <input class="input" type="text" v-model="searchText" placeholder="Mal No">
+              <span class="icon is-small is-left">
+                <i class="fas fa-search"></i>
+              </span>
+            </p>
+            <a class="button is-info" style="display: none;" v-show="user" @click="search">Ara</a>
+          </div>
+          <div>
+            <div class="select">
+              <select v-model="filterDays" id="filterDays" @change="filterResults">
+                <option value="30">1 Ay</option>
+                <option value="60">2 Ay</option>
+                <option value="0">Tümü</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="notification" style="text-align: center;" style="display: none;" v-show="products.length > 0">Gösterilen
+          kayıt: {{ showingRecords }}</div>
         <table class="table is-striped is-fullwidth" style="display: none;" v-show="products.length > 0">
           <thead>
             <tr>
@@ -111,7 +133,7 @@
                   </div>
                   <div class="select">
                     <select v-model="tett_month">
-                      <option>Ay</option>
+                      <option selected>Ay</option>
                       <option v-for="m in 12">{{ m }}</option>
                     </select>
                   </div>
@@ -173,37 +195,37 @@
       </div>
 
       <div id="registerModal" class="modal">
-          <div class="modal-background"></div>
-          <div class="modal-card" style="padding: 1rem">
-            <header class="modal-card-head">
-              <p class="modal-card-title">Kayıt Ol</p>
-              <button @click="closeRegisterModal" class="delete" aria-label="close"></button>
-            </header>
-            <section class="modal-card-body">
-              <form>
-                <div class="field">
-                  <label class="label">E-Posta</label>
-                  <div class="control">
-                    <input class="input" v-model="register_email" type="email" required>
-                  </div>
+        <div class="modal-background"></div>
+        <div class="modal-card" style="padding: 1rem">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Kayıt Ol</p>
+            <button @click="closeRegisterModal" class="delete" aria-label="close"></button>
+          </header>
+          <section class="modal-card-body">
+            <form>
+              <div class="field">
+                <label class="label">E-Posta</label>
+                <div class="control">
+                  <input class="input" v-model="register_email" type="email" required>
                 </div>
-                <div class="field">
-                  <label class="label">Parola</label>
-                  <div class="control">
-                    <input class="input" v-model="register_password" type="password" required>
-                  </div>
+              </div>
+              <div class="field">
+                <label class="label">Parola</label>
+                <div class="control">
+                  <input class="input" v-model="register_password" type="password" required>
                 </div>
-              </form>
-            </section>
-            <footer class="modal-card-foot">
-              <button class="button is-primary" @click="register">Kayıt Ol</button>
-              <button class="button" @click="closeRegisterModal">İptal</button>
-            </footer>
-          </div>
+              </div>
+            </form>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-primary" @click="register">Kayıt Ol</button>
+            <button class="button" @click="closeRegisterModal">İptal</button>
+          </footer>
         </div>
+      </div>
     </div>
   </section>
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/5.5.9/firebase-auth.js"></script>
@@ -241,14 +263,17 @@
         register_password: '',
         loading: true,
         showingRecords: 0,
+        searchText: '',
+        filterDays: 30,
       },
       mounted() {
-        let twoMonthsLater = (new Date().getTime() / 1000) + 60 * 24 * 60 * 60;
-        
+        let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
         firebase.auth().onAuthStateChanged((user) => {
           if (user) {
             this.user = user
-            db.collection("products").where("tett", "<=", twoMonthsLater).where("uid", "==", user.uid).orderBy("tett", "asc").get().then((querySnapshot) => {
+            let productsRef = db.collection("products")
+            let query = productsRef.where("tett", "<=", filterTime).where("uid", "==", user.uid)
+            query.orderBy("tett", "asc").get().then((querySnapshot) => {
               this.showingRecords = querySnapshot.size
               querySnapshot.forEach((doc) => {
                 this.products.push(doc.data())
@@ -284,6 +309,62 @@
         },
         closeAddNewProductModal() {
           document.getElementById("addNewProductModal").classList.remove("is-active")
+        },
+        filterResults() {
+          this.loading = true
+          this.products = []
+          let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
+          if (this.filterDays > 0) {
+            db.collection("products")
+              .where("tett", "<=", filterTime)
+              .where("uid", "==", this.user.uid)
+              .orderBy("tett", "asc").get().then((querySnapshot) => {
+                this.showingRecords = querySnapshot.size
+                querySnapshot.forEach((doc) => {
+                  this.products.push(doc.data())
+                })
+                this.loading = false
+              })
+          } else {
+            db.collection("products")
+              .where("uid", "==", this.user.uid)
+              .orderBy("tett", "asc").get().then((querySnapshot) => {
+                this.showingRecords = querySnapshot.size
+                querySnapshot.forEach((doc) => {
+                  this.products.push(doc.data())
+                })
+                this.loading = false
+              })
+          }
+        },
+        search() {
+          let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
+          this.loading = true
+          this.products = []
+          if (this.searchText) {
+            db.collection("products")
+              .where("tett", "<=", twoMonthsLater)
+              .where("uid", "==", this.user.uid)
+              .where("productNumber", "==", this.searchText)
+              .orderBy("tett", "asc").get().then((querySnapshot) => {
+                this.showingRecords = querySnapshot.size
+                querySnapshot.forEach((doc) => {
+                  this.products.push(doc.data())
+                })
+                this.loading = false
+              })
+          } else {
+            db.collection("products")
+              .where("tett", "<=", twoMonthsLater)
+              .where("uid", "==", this.user.uid)
+              .orderBy("tett", "asc").get().then((querySnapshot) => {
+                this.showingRecords = querySnapshot.size
+                querySnapshot.forEach((doc) => {
+                  this.products.push(doc.data())
+                })
+                this.loading = false
+              })
+          }
         },
         addNewProduct: function () {
           db.collection("products").add({
