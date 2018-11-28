@@ -121,7 +121,7 @@
               <div class="field">
                 <label class="label">Ürün TETT</label>
                 <div class="control">
-                  <input type="text" class="input" id="pick_tett">
+                  <div id="pick_tett">Takvim Aç</div>
                 </div>
               </div>
               <div class="field">
@@ -379,7 +379,7 @@
           }
         },
         addNewProduct: function () {
-          let tett = document.getElementById("tett").value
+          let tett = $("tett").text()
           db.collection("products").add({
             productNumber: this.productNumber,
             tett: new Date().getTime(tett.split[1]+"-"+tett.split[0]+"-"+tett.split[2]) / 1000,
@@ -427,7 +427,7 @@
           })
         },
         pick_tett() {
-          $("#pick_tett").val($("#tett").val())
+          $("#pick_tett").text($("#tett").val())
           $("#pickDateModal").removeClass("is-active");
         }
       }
