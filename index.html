@@ -121,7 +121,7 @@
               <div class="field">
                 <label class="label">Ürün TETT</label>
                 <div class="control">
-                  <input type="text" class="input" id="tett">
+                  <input type="text" class="input" id="pick_tett">
                 </div>
               </div>
               <div class="field">
@@ -198,6 +198,27 @@
           </footer>
         </div>
       </div>
+
+      <div id="pickDateModal" class="modal">
+        <div class="modal-background"></div>
+        <div class="modal-card" style="padding: 1rem">
+          <header class="modal-card-head">
+            <p class="modal-card-title">Tarih Seç</p>
+            <button @click="closePickDateModal" class="delete" aria-label="close"></button>
+          </header>
+          <section class="modal-card-body">
+              <div class="field">
+                <div class="control">
+                  <div id="tett">
+                </div>
+              </div>
+          </section>
+          <footer class="modal-card-foot">
+            <button class="button is-primary" @click="pick_tett">Seç</button>
+            <button class="button" @click="closePickDateModal">Vazgeç</button>
+          </footer>
+        </div>
+      </div>
     </div>
   </section>
   <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
@@ -212,10 +233,14 @@
       $("#tett").datepicker({
         changeMonth: true,
         changeYear: true,
-        dateFormat: "dd M yy"
+        dateFormat: "dd.mm.yy",
+        minDate: 0,
       });
       $("tett").focus(function() {
         $(this).blur()
+      });
+      $("#pick_tett").click(function() {
+        $("#pickDateModal").addClass("is-active");
       })
     })
     const config = {
@@ -271,9 +296,6 @@
         })
       },
       methods: {
-        changeTett() {
-          this.tett = document.getElementById("tett").value
-        },
         tettToDate(epoch) {
           return new Date(epoch * 1000).getDate() + "." + (new Date(epoch * 1000).getMonth() + 1) + "." + new Date(epoch * 1000).getFullYear()
         },
@@ -297,6 +319,9 @@
         },
         closeAddNewProductModal() {
           document.getElementById("addNewProductModal").classList.remove("is-active")
+        },
+        closePickDateModal() {
+          document.getElementById("pickDateModal").classList.remove("is-active")
         },
         filterResults() {
           this.loading = true
@@ -326,12 +351,10 @@
           }
         },
         search() {
-          let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
           this.loading = true
           this.products = []
           if (this.searchText) {
             db.collection("products")
-              .where("tett", "<=", filterTime)
               .where("uid", "==", this.user.uid)
               .where("productNumber", "==", this.searchText)
               .orderBy("tett", "asc").get().then((querySnapshot) => {
@@ -342,6 +365,7 @@
                 this.loading = false
               })
           } else {
+            let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
             db.collection("products")
               .where("tett", "<=", filterTime)
               .where("uid", "==", this.user.uid)
@@ -355,9 +379,10 @@
           }
         },
         addNewProduct: function () {
+          let tett = document.getElementById("tett").value
           db.collection("products").add({
             productNumber: this.productNumber,
-            tett: new Date(document.getElementById("tett").value).getTime() / 1000,
+            tett: new Date().getTime(tett.split[1]+"-"+tett.split[0]+"-"+tett.split[2]) / 1000,
             rk: this.rk
           })
             .then((docRef) => {
@@ -400,6 +425,10 @@
           firebase.auth().signOut().then(() => {
             this.user = null
           })
+        },
+        pick_tett() {
+          $("#pick_tett").val($("#tett").val())
+          $("#pickDateModal").removeClass("is-active");
         }
       }
     })
