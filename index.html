@@ -121,7 +121,7 @@
               <div class="field">
                 <label class="label">Ürün TETT</label>
                 <div class="control">
-                  <div id="pick_tett">Takvim Aç</div>
+                  <input id="pick_tett" type="text" v-model="tett" class="input">
                 </div>
               </div>
               <div class="field">
@@ -275,6 +275,7 @@
         showingRecords: 0,
         searchText: '',
         filterDays: 30,
+        tett: '',
       },
       mounted() {
         let filterTime = (new Date().getTime() / 1000) + (this.filterDays * 24 * 60 * 60)
@@ -379,10 +380,9 @@
           }
         },
         addNewProduct: function () {
-          let tett = $("tett").text()
           db.collection("products").add({
             productNumber: this.productNumber,
-            tett: new Date().getTime(tett.split[1]+"-"+tett.split[0]+"-"+tett.split[2]) / 1000,
+            tett: new Date(this.tett.split(".")[1]+"-"+this.tett.split(".")[0]+"-"+this.tett.split(".")[2]).getTime() / 1000,
             rk: this.rk
           })
             .then((docRef) => {
@@ -427,7 +427,8 @@
           })
         },
         pick_tett() {
-          $("#pick_tett").text($("#tett").val())
+          $("#pick_tett").val($("#tett").val())
+          this.tett = $("#tett").val()
           $("#pickDateModal").removeClass("is-active");
         }
       }
