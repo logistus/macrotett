@@ -287,6 +287,7 @@
             let productsRef = db.collection("products")
             let query = productsRef.where("tett", "<=", filterTime).where("uid", "==", user.uid)
             query.orderBy("tett", "asc").get().then((querySnapshot) => {
+              console.log(querySnapshot.size)
               this.showingRecords = querySnapshot.size
               querySnapshot.forEach((doc) => {
                 this.products.push(doc.data())
